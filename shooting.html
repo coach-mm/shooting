@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シュート練習記録</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        select, input, button { margin: 5px; padding: 10px; }
+        button { background-color: blue; color: white; border: none; cursor: pointer; }
+        canvas { max-width: 600px; margin: 20px auto; }
+        table { width: 100%; margin: 20px 0; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>シュート練習記録</h1>
+    
+    <label for="playerNumber">選手:</label>
+    <select id="playerNumber">
+        <option value="">選手を選択</option>
+        <script>
+            for (let i = 4; i <= 20; i++) {
+                document.write(`<option value="${i}">背番号 ${i}</option>`);
+            }
+        </script>
+    </select>
+    
+    <input type="number" id="attempts" placeholder="シュート試投数">
+    <input type="number" id="makes" placeholder="シュート成功数">
+    <button onclick="addData()">データ追加</button>
+    
+    <h2>個人の成長記録</h2>
+    <canvas id="personalChart"></canvas>
+    
+    <h2>チーム比較</h2>
+    <canvas id="teamChart"></canvas>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>日付</th>
+                <th>背番号</th>
+                <th>試投数</th>
+                <th>成功数</th>
+                <th>成功率(%)</th>
+            </tr>
+        </thead>
+        <tbody id="dataTable"></tbody>
+    </table>
+    
+    <script>
+        let playerData = JSON.parse(localStorage.getItem("playerData")) || {};
+        let personalChart;
+        let teamChart;
+        
+        function addData() {
+            let playerNumber = document.getElementById('playerNumber').value;
+            let attempts = Number(document.getElementById('attempts').value);
+            let makes = Number(document.getElementById('makes').value);
+            let date = new Date().toLocaleDateString();
+            
+            if (!playerNumber || attempts === 0) return;
+            
+            if (!playerData[playerNumber]) {
+                playerData[playerNumber] = [];
+            }
+            
+            playerData[playerNumber].push({ date, attempts, makes });
+            
+            // データをローカルストレージに保存
+            localStorage.setItem("playerData", JSON.stringify(playerData));
+            updateCharts();
+        }
+
+        function updateCharts() {
+            let labels = [];
+            let personalData = [];
+            let teamData = [];
+            let tableHTML = '';
+            
+            for (let playerNumber in playerData) {
+                let totalAttempts = playerData[playerNumber].reduce((sum, entry) => sum + entry.attempts, 0);
+                let totalMakes = playerData[playerNumber].reduce((sum, entry) => sum + entry.makes, 0);
+                let accuracy = ((totalMakes / totalAttempts) * 100).toFixed(2);
+                
+                labels.push(playerNumber);
+                personalData.push(Number(accuracy));
+                teamData.push(totalMakes);
+                
+                playerData[playerNumber].forEach(entry => {
+                    tableHTML += `<tr>
+                        <td>${entry.date}</td>
+                        <td>${playerNumber}</td>
+                        <td>${entry.attempts}</td>
+                        <td>${entry.makes}</td>
+                        <td>${((entry.makes / entry.attempts) * 100).toFixed(2)}%</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('dataTable').innerHTML = tableHTML;
+            renderCharts(labels, personalData, teamData);
+        }
+        
+        function renderCharts(labels, personalData, teamData) {
+            if (personalChart) personalChart.destroy();
+            if (teamChart) teamChart.destroy();
+
+            let ctx1 = document.getElementById('personalChart').getContext('2d');
+            personalChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: '成功率(%)', data: personalData, backgroundColor: 'blue' }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            let ctx2 = document.getElementById('teamChart').getContext('2d');
+            teamChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: '成功数', data: teamData, backgroundColor: 'green' }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        }
+        
+        // ページ読み込み時にデータを復元
+        window.onload = updateCharts;
+    </script>
+</body>
+</html>
