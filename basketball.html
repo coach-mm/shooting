@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バスケットボール シュート記録</title>
+</head>
+<body style="text-align: center; font-family: Arial, sans-serif;">
+    <h1>🏀 シュート記録アプリ</h1>
+    
+    <label>成功したシュート数：</label>
+    <input type="number" id="made" value="0"><br><br>
+
+    <label>試行したシュート数：</label>
+    <input type="number" id="attempted" value="0"><br><br>
+
+    <button onclick="calculate()">記録する</button>
+    
+    <h2>📋 記録一覧</h2>
+    <ul id="recordList"></ul>
+
+    <script>
+        function calculate() {
+            let made = parseInt(document.getElementById("made").value);
+            let attempted = parseInt(document.getElementById("attempted").value);
+            
+            if (attempted === 0) {
+                alert("試行数は1以上にしてください");
+                return;
+            }
+
+            let percentage = ((made / attempted) * 100).toFixed(2);
+            let recordList = document.getElementById("recordList");
+
+            let newRecord = document.createElement("li");
+            newRecord.innerText = `成功数: ${made} / 試行数: ${attempted} （成功率: ${percentage}%）`;
+            recordList.prepend(newRecord);
+
+            document.getElementById("made").value = 0;
+            document.getElementById("attempted").value = 0;
+        }
+    </script>
+</body>
+</html>
